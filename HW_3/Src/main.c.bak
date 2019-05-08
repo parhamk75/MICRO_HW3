@@ -39,6 +39,7 @@
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 #include "stm32f4xx_hal.h"
+#include "tim.h"
 #include "usart.h"
 #include "gpio.h"
 
@@ -67,8 +68,8 @@ LED_t 		LEDs[4];
 
 typedef enum{
 	LED_set = 1,
-	LCD_cmd = 2,
-	LCD_chr = 3
+	LCD = 2,
+	ERR = 3
 } Packet_Type;
 
 Packet_Type pckt_t;
@@ -119,13 +120,20 @@ int main(void)
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
   MX_USART2_UART_Init();
+  MX_TIM1_Init();
+  MX_TIM4_Init();
   /* USER CODE BEGIN 2 */
-	HAL_UART_Receive_IT(&huart2, receive_pckt, 8);
+
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
-	
+		
+		/////////////// Q1 //////////////
+		
+		HAL_UART_Receive_IT(&huart2, receive_pckt, 8);
+		
+		
 	/////////////// Q3 ////////////
 	for(uint8_t tmp_itrtr_1= 0; tmp_itrtr_1 < 3; tmp_itrtr_1++)
 		{
@@ -150,7 +158,7 @@ int main(void)
 		
 		/////////// Q4 ////////////
 		HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_3);	// LCD CONTRAST
-	HAL_TIM_PWM_Start(&htim4, TIM_CHANNEL_3); // LCD BACKLIGHT
+		HAL_TIM_PWM_Start(&htim4, TIM_CHANNEL_3); // LCD BACKLIGHT
 	
 	__HAL_TIM_SetCompare(&htim1, TIM_CHANNEL_3, 10); // 0 => High Cont.  100 => Low Cont.
 	__HAL_TIM_SetCompare(&htim4, TIM_CHANNEL_3, 60);
@@ -197,6 +205,24 @@ int main(void)
 
 		if(pckt_rcvd_flg == 1)
 		{
+			// check the packet
+			if(receive_pckt[0] == 255 && receive_pckt[0] == 255 && receive_pckt[6] == 200 && receive_pckt[7] == 200)
+			{				
+				if(receive_pckt[2] == 0 || receive_pckt[2] == 1)
+				{
+					pckt_t = LED_set;
+				}
+				else
+				{
+					pckt_t = LCD;
+				}					
+			}
+			else
+			{
+				pckt_t = ERR;
+			}
+			
+			// Perform the command!
 			switch (pckt_t)
       {
       	case LED_set:
@@ -204,20 +230,24 @@ int main(void)
 					{
 						HAL_GPIO_WritePin(LEDs[tmp_itrtr_3].port, LEDs[tmp_itrtr_3].pin, receive_pckt[tmp_itrtr_3 + 2]);
 					}
-      	case LCD_cmd:
+					
+      	case LCD:
       		switch (receive_pckt[2])
           {
-          	case 5:
-          		lcd_clear(
-          	case 6:
-          		break;
+          	case 2:
+          		lcd_clear( &lcd_0 );
+          	case 3:
+          		lcd_set_curser(&lcd_0, receive_pckt[3], receive_pckt[4]);
+						case 4:
+							lcd_putchar( &lcd_0, receive_pckt[3] );
+						case 5:
+          		send_cmd(&lcd_0, receive_pckt[3]);
           	default:
-          		break;
+          		HAL_UART_Transmit_IT(&huart2, (uint8_t*)"LCD command not valid!\n", 23);
           }
-      	case LCD_chr:
-      		break;
+				
 				default:
-      		break;
+      		HAL_UART_Transmit_IT(&huart2, (uint8_t*)"Error in receiving the packet\n", 30);
       }
 								
 			pckt_rcvd_flg = 0;
