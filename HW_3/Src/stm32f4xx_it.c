@@ -36,12 +36,13 @@
 #include "stm32f4xx_it.h"
 
 /* USER CODE BEGIN 0 */
-extern uint8_t pckt_rcvd_flg;
+extern uint8_t  pckt_rcvd_flg;
+extern uint8_t 	receive_pckt[];
 /* USER CODE END 0 */
 
 /* External variables --------------------------------------------------------*/
 extern UART_HandleTypeDef huart2;
-extern uint8_t  					receive_pckt[];
+
 /******************************************************************************/
 /*            Cortex-M4 Processor Interruption and Exception Handlers         */ 
 /******************************************************************************/
@@ -206,11 +207,33 @@ void USART2_IRQHandler(void)
   /* USER CODE END USART2_IRQn 1 */
 }
 
+/**
+* @brief This function handles EXTI line[15:10] interrupts.
+*/
+void EXTI15_10_IRQHandler(void)
+{
+  /* USER CODE BEGIN EXTI15_10_IRQn 0 */
+
+  /* USER CODE END EXTI15_10_IRQn 0 */
+  HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_13);
+  /* USER CODE BEGIN EXTI15_10_IRQn 1 */
+
+  /* USER CODE END EXTI15_10_IRQn 1 */
+}
+
 /* USER CODE BEGIN 1 */
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 {
 	pckt_rcvd_flg = 1;
 	HAL_UART_Receive_IT(&huart2, receive_pckt, 8);
+}
+
+void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
+{
+	if( GPIO_Pin == B1_Pin )
+	{
+		HAL_UART_Transmit_IT(&huart2, (uint8_t*)"User Key pressed\n", 17);
+	}
 }
 /* USER CODE END 1 */
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/

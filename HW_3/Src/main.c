@@ -39,11 +39,12 @@
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 #include "stm32f4xx_hal.h"
+#include "tim.h"
 #include "usart.h"
 #include "gpio.h"
 
 /* USER CODE BEGIN Includes */
-
+#include "lm016.h"
 /* USER CODE END Includes */
 
 /* Private variables ---------------------------------------------------------*/
@@ -64,6 +65,16 @@ typedef struct{
 uint8_t 	receive_pckt[8];
 uint8_t		pckt_rcvd_flg;
 LED_t 		LEDs[4];
+
+typedef enum{
+	LED_set = 1,
+	LCD_cmd = 2,
+	LCD_chr = 3
+} Packet_Type;
+
+Packet_Type pckt_t;
+
+lcd_t lcd_0;
 
 /* USER CODE END PV */
 
@@ -109,12 +120,20 @@ int main(void)
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
   MX_USART2_UART_Init();
+  MX_TIM1_Init();
+  MX_TIM4_Init();
   /* USER CODE BEGIN 2 */
-	HAL_UART_Receive_IT(&huart2, receive_pckt, 8);
+
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
+		
+		/////////////// Q1 //////////////
+		
+		HAL_UART_Receive_IT(&huart2, receive_pckt, 8);
+		
+		
 	/////////////// Q3 ////////////
 	for(uint8_t tmp_itrtr_1= 0; tmp_itrtr_1 < 3; tmp_itrtr_1++)
 		{
@@ -137,16 +156,78 @@ int main(void)
 		LEDs[3].port = GPIOB;
 		LEDs[3].pin	 = GPIO_PIN_0;
 		
+		/////////// Q4 ////////////
+		HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_3);	// LCD CONTRAST
+	HAL_TIM_PWM_Start(&htim4, TIM_CHANNEL_3); // LCD BACKLIGHT
+	
+	__HAL_TIM_SetCompare(&htim1, TIM_CHANNEL_3, 10); // 0 => High Cont.  100 => Low Cont.
+	__HAL_TIM_SetCompare(&htim4, TIM_CHANNEL_3, 60);
+	
+	/* <= LCD Initialization BEGIN => */
+
+	// Data Ports
+	lcd_0.data_ports[0] = GPIOB;
+	lcd_0.data_ports[1] = GPIOA;
+	lcd_0.data_ports[2] = GPIOA;
+	lcd_0.data_ports[3] = GPIOC;
+	lcd_0.data_ports[4] = GPIOB;
+	lcd_0.data_ports[5] = GPIOA;
+	lcd_0.data_ports[6] = GPIOA;
+	lcd_0.data_ports[7] = GPIOA;
+	// Data Pins
+	lcd_0.data_pins[0]  = GPIO_PIN_10;
+	lcd_0.data_pins[1]  = GPIO_PIN_8;
+	lcd_0.data_pins[2]  = GPIO_PIN_9;
+	lcd_0.data_pins[3]  = GPIO_PIN_7;
+	lcd_0.data_pins[4]  = GPIO_PIN_6;
+	lcd_0.data_pins[5]  = GPIO_PIN_7;
+	lcd_0.data_pins[6]  = GPIO_PIN_6;
+	lcd_0.data_pins[7]  = GPIO_PIN_5;
+	
+	
+	// Control Ports
+	lcd_0.rs_port				= GPIOB;	
+	lcd_0.en_port 			= GPIOB;
+	
+	// Control Pins
+	lcd_0.rs_pin				= GPIO_PIN_3;
+	lcd_0.en_pin 				= GPIO_PIN_4;
+	
+	
+	// Mode
+	lcd_0.mode					= _4_BIT;
+	
+	lcd_init(&lcd_0);
+	/* <= LCD Initialization END => */
+		
   while (1)
   {
 
 		if(pckt_rcvd_flg == 1)
 		{
-			for(uint8_t tmp_itrtr_3= 0; tmp_itrtr_3 < 4; tmp_itrtr_3++)
-			{
-				HAL_GPIO_WritePin(LEDs[tmp_itrtr_3].port, LEDs[tmp_itrtr_3].pin, receive_pckt[tmp_itrtr_3 + 2]);
-			}
-			
+			switch (pckt_t)
+      {
+      	case LED_set:
+      		for(uint8_t tmp_itrtr_3= 0; tmp_itrtr_3 < 4; tmp_itrtr_3++)
+					{
+						HAL_GPIO_WritePin(LEDs[tmp_itrtr_3].port, LEDs[tmp_itrtr_3].pin, receive_pckt[tmp_itrtr_3 + 2]);
+					}
+      	case LCD_cmd:
+      		switch (receive_pckt[2])
+          {
+          	case 5:
+          		lcd_clear(
+          	case 6:
+          		break;
+          	default:
+          		break;
+          }
+      	case LCD_chr:
+      		break;
+				default:
+      		break;
+      }
+								
 			pckt_rcvd_flg = 0;
 			
 		}
