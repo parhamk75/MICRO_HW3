@@ -62,9 +62,9 @@ typedef struct{
 	uint16_t 		 	pin;
 }LED_t;
 
-uint8_t 	receive_pckt[8];
-uint8_t		pckt_rcvd_flg;
-LED_t 		LEDs[4];
+					uint8_t 	receive_pckt[8];
+volatile	uint8_t		pckt_rcvd_flg;
+					LED_t 		LEDs[4];
 
 typedef enum{
 	LED_set = 1,
@@ -231,20 +231,20 @@ int main(void)
 				if(receive_pckt[2] == 0 || receive_pckt[2] == 1)
 				{
 					pckt_t = LED_set;
-					
+					/*
 					lcd_puts(&lcd_0, "Packet Type ==> LED");
 					HAL_Delay(2000);
 					lcd_clear(&lcd_0);
-					
+					*/
 				}
 				else
 				{
 					pckt_t = LCD;
-					
+					/*
 					lcd_puts(&lcd_0, "Packet Type ==> LCD");
 					HAL_Delay(2000);
 					lcd_clear(&lcd_0);
-					
+					*/
 				}					
 			}
 			else
@@ -266,37 +266,27 @@ int main(void)
 					{
 						HAL_GPIO_WritePin(LEDs[tmp_itrtr_3].port, LEDs[tmp_itrtr_3].pin, receive_pckt[tmp_itrtr_3 + 2]);
 					}
+					break;
 					
       	case LCD:
       		switch (receive_pckt[2])
           {
           	case 2:
-							lcd_puts(&lcd_0, "LCD --> 2");
-							HAL_Delay(2000);
-							lcd_clear(&lcd_0);
-          		
 							lcd_clear( &lcd_0 );
+							break;
           	case 3:
-							lcd_puts(&lcd_0, "LCD --> 3");
-							HAL_Delay(2000);
-							lcd_clear(&lcd_0);
-						
           		lcd_set_curser(&lcd_0, receive_pckt[3], receive_pckt[4]);
+							break;
 						case 4:
-							lcd_puts(&lcd_0, "LCD --> 4");
-							HAL_Delay(2000);
-							lcd_clear(&lcd_0);
-						
 							lcd_putchar( &lcd_0, receive_pckt[3] );
+							break;
 						case 5:
-							lcd_puts(&lcd_0, "LCD --> 5");
-							HAL_Delay(2000);
-							lcd_clear(&lcd_0);
-						
           		send_cmd(&lcd_0, receive_pckt[3]);
+							break;
           	default:
           		HAL_UART_Transmit_IT(&huart2, (uint8_t*)"LCD command not valid!\n\r", 24);
           }
+					break;
 				
 				default:
       		HAL_UART_Transmit_IT(&huart2, (uint8_t*)"Error in receiving the packet\n\r", 31);

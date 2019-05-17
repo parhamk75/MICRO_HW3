@@ -62,9 +62,9 @@ typedef struct{
 	uint16_t 		 	pin;
 }LED_t;
 
-uint8_t 	receive_pckt[8];
-uint8_t		pckt_rcvd_flg;
-LED_t 		LEDs[4];
+					uint8_t 	receive_pckt[8];
+volatile	uint8_t		pckt_rcvd_flg;
+					LED_t 		LEDs[4];
 
 typedef enum{
 	LED_set = 1,
@@ -72,7 +72,7 @@ typedef enum{
 	ERR = 3
 } Packet_Type;
 
-volatile Packet_Type pckt_t = ERR;
+Packet_Type pckt_t = ERR;
 
 lcd_t lcd_0;
 
@@ -272,31 +272,15 @@ int main(void)
       		switch (receive_pckt[2])
           {
           	case 2:
-							lcd_puts(&lcd_0, "LCD --> 2");
-							HAL_Delay(2000);
-							lcd_clear(&lcd_0);
-          		
 							lcd_clear( &lcd_0 );
 							break;
           	case 3:
-							lcd_puts(&lcd_0, "LCD --> 3");
-							HAL_Delay(2000);
-							lcd_clear(&lcd_0);
-						
           		lcd_set_curser(&lcd_0, receive_pckt[3], receive_pckt[4]);
 							break;
 						case 4:
-							lcd_puts(&lcd_0, "LCD --> 4");
-							HAL_Delay(2000);
-							lcd_clear(&lcd_0);
-						
 							lcd_putchar( &lcd_0, receive_pckt[3] );
 							break;
 						case 5:
-							lcd_puts(&lcd_0, "LCD --> 5");
-							HAL_Delay(2000);
-							lcd_clear(&lcd_0);
-						
           		send_cmd(&lcd_0, receive_pckt[3]);
 							break;
           	default:

@@ -72,8 +72,8 @@ void lcd_init(lcd_t * lcd)
 	}
 	
 	send_cmd(lcd, 0x01);
-	send_cmd(lcd, 0x06);
 	send_cmd(lcd, 0x0E);
+	send_cmd(lcd, 0x06);
 	
 }	
 	

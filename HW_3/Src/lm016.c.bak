@@ -113,7 +113,7 @@ void lcd_putchar(lcd_t * lcd, uint8_t character)
 void lcd_clear(lcd_t * lcd)
 {
 	send_cmd(lcd, 0x01);
-	//send_cmd(lcd, 0x02);
+	send_cmd(lcd, 0x02);
 }
 
 void lcd_puts(lcd_t * lcd, char *str)
