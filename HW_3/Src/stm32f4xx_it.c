@@ -224,8 +224,7 @@ void EXTI15_10_IRQHandler(void)
 /* USER CODE BEGIN 1 */
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 {
-	pckt_rcvd_flg = 1;
-	HAL_UART_Receive_IT(&huart2, receive_pckt, 8);
+	pckt_rcvd_flg = 1;	
 }
 
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)

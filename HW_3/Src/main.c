@@ -55,7 +55,7 @@
 
 extern 		UART_HandleTypeDef huart2;
 uint32_t 	speeds[] 		= {9600, 115200, 1000000};
-uint8_t		msg[16];
+uint8_t		msg[50];
 
 typedef struct{
 	GPIO_TypeDef* port;
@@ -72,7 +72,7 @@ typedef enum{
 	ERR = 3
 } Packet_Type;
 
-Packet_Type pckt_t;
+Packet_Type pckt_t = ERR;
 
 lcd_t lcd_0;
 
@@ -130,23 +130,27 @@ int main(void)
   /* USER CODE BEGIN WHILE */
 		
 		/////////////// Q1 //////////////
-		
-		HAL_UART_Receive_IT(&huart2, receive_pckt, 8);
-		
-		
-	/////////////// Q3 ////////////
+/*
 	for(uint8_t tmp_itrtr_1= 0; tmp_itrtr_1 < 3; tmp_itrtr_1++)
 		{
+			sprintf((char*)msg, "Speed is changing to %7d in 3 seconds\n\r", speeds[tmp_itrtr_1]);
+			HAL_UART_Transmit(&huart2, msg, 43, 200);
+			HAL_Delay(3000);
+						
 			huart2.Init.BaudRate = speeds[tmp_itrtr_1];
 			HAL_UART_Init(&huart2);
 			for(uint16_t tmp_itrtr_2= 0; tmp_itrtr_2 < 2000; tmp_itrtr_2++)
 			{
-				sprintf((char*)msg, "Hello UART %4d", tmp_itrtr_2);
-				HAL_UART_Transmit(&huart2, msg, 16, 200);
-			}
+				sprintf((char*)msg, "Hello UART %4d\n\r", tmp_itrtr_2+1);
+				HAL_UART_Transmit(&huart2, msg, 18, 200);
+			}					
 		} 
 	
-		///////////// Q2 ////////////
+*/
+		
+
+		
+				///////////// Q2 ////////////			
 		LEDs[0].port = GPIOA;
 		LEDs[0].pin  = GPIO_PIN_0;
 		LEDs[1].port = GPIOA;
@@ -156,12 +160,17 @@ int main(void)
 		LEDs[3].port = GPIOB;
 		LEDs[3].pin	 = GPIO_PIN_0;
 		
+		HAL_UART_Receive_IT(&huart2, receive_pckt, 8);
+		
+
 		/////////// Q4 ////////////
 		HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_3);	// LCD CONTRAST
 		HAL_TIM_PWM_Start(&htim4, TIM_CHANNEL_3); // LCD BACKLIGHT
 	
 	__HAL_TIM_SetCompare(&htim1, TIM_CHANNEL_3, 10); // 0 => High Cont.  100 => Low Cont.
 	__HAL_TIM_SetCompare(&htim4, TIM_CHANNEL_3, 60);
+	
+	
 	
 	/* <= LCD Initialization BEGIN => */
 
@@ -195,32 +204,58 @@ int main(void)
 	
 	
 	// Mode
-	lcd_0.mode					= _4_BIT;
+	lcd_0.mode					= _8_BIT;
 	
 	HAL_Delay(100);
 	lcd_init(&lcd_0);
 	/* <= LCD Initialization END => */
+	
+	lcd_puts(&lcd_0, "Hello! Welcome to the HW3!");
+	HAL_Delay(1000);
+	lcd_clear(&lcd_0);
 		
   while (1)
   {
 
 		if(pckt_rcvd_flg == 1)
 		{
+			/*
+			lcd_puts(&lcd_0, "Checking the Packet Type");
+			HAL_Delay(2000);
+			lcd_clear(&lcd_0);
+			*/
+			
 			// check the packet
-			if(receive_pckt[0] == 255 && receive_pckt[0] == 255 && receive_pckt[6] == 200 && receive_pckt[7] == 200)
+			if(receive_pckt[0] == 255 && receive_pckt[1] == 255 && receive_pckt[6] == 200 && receive_pckt[7] == 200)
 			{				
 				if(receive_pckt[2] == 0 || receive_pckt[2] == 1)
 				{
 					pckt_t = LED_set;
+					
+					lcd_puts(&lcd_0, "Packet Type ==> LED");
+					HAL_Delay(2000);
+					lcd_clear(&lcd_0);
+					
 				}
 				else
 				{
 					pckt_t = LCD;
+					
+					lcd_puts(&lcd_0, "Packet Type ==> LCD");
+					HAL_Delay(2000);
+					lcd_clear(&lcd_0);
+					
 				}					
 			}
 			else
 			{
 				pckt_t = ERR;
+				/*
+				lcd_puts(&lcd_0, "ERROR");
+				HAL_Delay(2000);
+				lcd_clear(&lcd_0);
+				*/
+				
 			}
 			
 			// Perform the command!
@@ -236,22 +271,39 @@ int main(void)
       		switch (receive_pckt[2])
           {
           	case 2:
-          		lcd_clear( &lcd_0 );
+							lcd_puts(&lcd_0, "LCD --> 2");
+							HAL_Delay(2000);
+							lcd_clear(&lcd_0);
+          		
+							lcd_clear( &lcd_0 );
           	case 3:
+							lcd_puts(&lcd_0, "LCD --> 3");
+							HAL_Delay(2000);
+							lcd_clear(&lcd_0);
+						
           		lcd_set_curser(&lcd_0, receive_pckt[3], receive_pckt[4]);
 						case 4:
+							lcd_puts(&lcd_0, "LCD --> 4");
+							HAL_Delay(2000);
+							lcd_clear(&lcd_0);
+						
 							lcd_putchar( &lcd_0, receive_pckt[3] );
 						case 5:
+							lcd_puts(&lcd_0, "LCD --> 5");
+							HAL_Delay(2000);
+							lcd_clear(&lcd_0);
+						
           		send_cmd(&lcd_0, receive_pckt[3]);
           	default:
-          		HAL_UART_Transmit_IT(&huart2, (uint8_t*)"LCD command not valid!\n", 23);
+          		HAL_UART_Transmit_IT(&huart2, (uint8_t*)"LCD command not valid!\n\r", 24);
           }
 				
 				default:
-      		HAL_UART_Transmit_IT(&huart2, (uint8_t*)"Error in receiving the packet\n", 30);
+      		HAL_UART_Transmit_IT(&huart2, (uint8_t*)"Error in receiving the packet\n\r", 31);
       }
 								
 			pckt_rcvd_flg = 0;
+			HAL_UART_Receive_IT(&huart2, receive_pckt, 8);
 			
 		}
 			
